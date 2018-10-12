@@ -22,6 +22,8 @@ RE.currentSelection = {
     "endContainer": 0,
     "endOffset": 0};
 
+RE.beforeCaretPos = 0;
+
 RE.editor = document.getElementById('editor');
 
 document.addEventListener("selectionchange", function() { RE.backuprange(); });
@@ -92,42 +94,55 @@ RE.setInputEnabled = function(inputEnabled) {
 
 RE.undo = function() {
     document.execCommand('undo', false, null);
+    RE.enabledEditingItems('undo');
 }
 
 RE.redo = function() {
     document.execCommand('redo', false, null);
+    RE.enabledEditingItems('redo');
 }
 
 RE.setBold = function() {
+    // for korean
+    RE.resetCaretPosition();
     document.execCommand('bold', false, null);
+    RE.enabledEditingItems('setBold');
 }
 
 RE.setItalic = function() {
+    RE.resetCaretPosition();
     document.execCommand('italic', false, null);
+    RE.enabledEditingItems('setBold');
 }
 
 RE.setSubscript = function() {
     document.execCommand('subscript', false, null);
+    RE.enabledEditingItems('setSubscript');
 }
 
 RE.setSuperscript = function() {
     document.execCommand('superscript', false, null);
+    RE.enabledEditingItems('setSuperscript');
 }
 
 RE.setStrikeThrough = function() {
     document.execCommand('strikeThrough', false, null);
+    RE.enabledEditingItems('setStrikeThrough');
 }
 
 RE.setUnderline = function() {
     document.execCommand('underline', false, null);
+    RE.enabledEditingItems('setUnderline');
 }
 
 RE.setBullets = function() {
     document.execCommand('insertUnorderedList', false, null);
+    RE.enabledEditingItems('setBullets');
 }
 
 RE.setNumbers = function() {
     document.execCommand('insertOrderedList', false, null);
+    RE.enabledEditingItems('setNumbers');
 }
 
 RE.setTextColor = function(color) {
@@ -135,6 +150,7 @@ RE.setTextColor = function(color) {
     document.execCommand("styleWithCSS", null, true);
     document.execCommand('foreColor', false, color);
     document.execCommand("styleWithCSS", null, false);
+    RE.enabledEditingItems('setNumbers');
 }
 
 RE.setTextBackgroundColor = function(color) {
@@ -142,38 +158,54 @@ RE.setTextBackgroundColor = function(color) {
     document.execCommand("styleWithCSS", null, true);
     document.execCommand('hiliteColor', false, color);
     document.execCommand("styleWithCSS", null, false);
+    RE.enabledEditingItems('setTextBackgroundColor');
 }
 
 RE.setFontSize = function(fontSize){
     document.execCommand("fontSize", false, fontSize);
+    RE.enabledEditingItems('setFontSize');
 }
 
 RE.setHeading = function(heading) {
-    document.execCommand('formatBlock', false, '<h'+heading+'>');
+    RE.resetCaretPosition();
+    if( document.queryCommandValue('formatBlock').indexOf('h') === 0 ){
+        document.execCommand('formatBlock', false, 'p');
+    } else {
+        document.execCommand('formatBlock', false, '<h'+heading+'>');
+    }
+    RE.enabledEditingItems('setHeading');
 }
 
 RE.setIndent = function() {
     document.execCommand('indent', false, null);
+
+    RE.enabledEditingItems('setIndent');
 }
 
 RE.setOutdent = function() {
     document.execCommand('outdent', false, null);
+
+    RE.enabledEditingItems('setOutdent');
 }
 
 RE.setJustifyLeft = function() {
     document.execCommand('justifyLeft', false, null);
+    RE.enabledEditingItems('setJustifyLeft');
 }
 
 RE.setJustifyCenter = function() {
     document.execCommand('justifyCenter', false, null);
+    RE.enabledEditingItems('setJustifyCenter');
 }
 
 RE.setJustifyRight = function() {
     document.execCommand('justifyRight', false, null);
+    RE.enabledEditingItems('setJustifyRight');
 }
 
 RE.setBlockquote = function() {
     document.execCommand('formatBlock', false, '<blockquote>');
+    RE.enabledEditingItems('setBlockquote');
 }
 
 RE.insertImage = function(url, alt) {
@@ -202,11 +234,13 @@ RE.insertLink = function(url, title) {
        sel.addRange(range);
    }
     RE.callback();
+    RE.enabledEditingItems('insertLink');
 }
 
 RE.setTodo = function(text) {
     var html = '<input type="checkbox" name="'+ text +'" value="'+ text +'"/> &nbsp;';
     document.execCommand('insertHTML', false, html);
+    RE.enabledEditingItems('setTodo');
 }
 
 RE.prepareInsert = function() {
@@ -235,6 +269,7 @@ RE.restorerange = function(){
 }
 
 RE.enabledEditingItems = function(e) {
+    //alert(e);
     var items = [];
     if (document.queryCommandState('bold')) {
         items.push('bold');
@@ -279,7 +314,6 @@ RE.enabledEditingItems = function(e) {
     if (formatBlock.length > 0) {
         items.push(formatBlock);
     }
-
     window.location.href = "re-state://" + encodeURI(items.join(','));
 }
 
@@ -304,9 +338,27 @@ RE.removeFormat = function() {
 // Event Listeners
 RE.editor.addEventListener("input", RE.callback);
 RE.editor.addEventListener("keyup", function(e) {
-    var KEY_LEFT = 37, KEY_RIGHT = 39;
-    if (e.which == KEY_LEFT || e.which == KEY_RIGHT) {
+    var target_keys = new Array(
+        37, // LEFT
+        39, // RIGHT
+        13 // ENTER
+    );
+    //KEY_LEFT = 37, KEY_RIGHT = 39;
+    if (target_keys.indexOf(e.which) >= 0) {
         RE.enabledEditingItems(e);
     }
 });
 RE.editor.addEventListener("click", RE.enabledEditingItems);
+
+RE.resetCaretPosition = function(){
+    var selection = window.getSelection();
+    if (selection.rangeCount > 0) {
+      var range = selection.getRangeAt(0);
+        if( range.startOffset == range.endOffset ){
+            //단일 포커스
+            RE.backuprange();
+            RE.blurFocus();
+            RE.restorerange();
+        }
+    }
+}

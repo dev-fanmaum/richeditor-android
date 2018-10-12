@@ -11,3 +11,18 @@ android {
   }
   buildToolsVersion '27.0.3'
 }
+
+task deleteOldJar(type: Delete) {
+  delete 'libs/{moduleName}.jar'
+}
+
+//task to export contents as jar
+task exportJar(type: Copy) {
+  from('build/intermediates/intermediate-jars/release/')
+  into('libs/')
+  include('classes.jar')
+  ///Give whatever name you want to give
+  rename('classes.jar', 'CustomEditor.jar')
+}
+
+exportJar.dependsOn(deleteOldJar, build)

@@ -13,6 +13,7 @@ import android.view.Gravity;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -279,6 +280,7 @@ public class RichEditor extends WebView {
   }
 
   public void setBold() {
+    //resetFocus();
     exec("javascript:RE.setBold();");
   }
 
@@ -361,6 +363,12 @@ public class RichEditor extends WebView {
 
   public void setNumbers() {
     exec("javascript:RE.setNumbers();");
+  }
+
+  public void resetFocus(){
+    exec("javascript:RE.setCaretPosition();");
+    clearFocusEditor();
+    exec("javascript:RE.resetCaretPosition();");
   }
 
   public void insertImage(String url, String alt) {
